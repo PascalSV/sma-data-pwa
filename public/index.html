@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="description" content="Solar meter PWA - Real-time solar power monitoring">
+    <title>Solar Meter Monitor</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f5f7ff;
+            --bg-2: #e8edf8;
+            --card: rgba(255, 255, 255, 0.9);
+            --primary: #0a84ff;
+            --primary-soft: #5ea0ff;
+            --accent: #30d158;
+            --text: #0f172a;
+            --muted: #5b6477;
+            --shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+            --radius-lg: 18px;
+            --radius-md: 14px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: radial-gradient(120% 120% at 20% 20%, var(--bg) 0%, var(--bg-2) 100%);
+            min-height: 100vh;
+            padding: clamp(16px, 4vw, 28px);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        header {
+            background: var(--card);
+            padding: 18px 20px;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .header-content {
+            flex: 1;
+        }
+
+        h1 {
+            font-size: 1.9em;
+            color: var(--text);
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timestamp {
+            color: var(--muted);
+            font-size: 0.95em;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 44px rgba(15, 23, 42, 0.12);
+        }
+
+        .card h2 {
+            font-size: 1.05em;
+            color: var(--text);
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+            letter-spacing: -0.01em;
+        }
+
+        .gauge-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 6px auto 0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 20px 0 8px;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 2.8em;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.01em;
+        }
+
+        .metric-unit {
+            font-size: 0.85em;
+            color: var(--muted);
+            margin-left: 6px;
+        }
+
+        .gauge-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .gauge-limits {
+            display: flex;
+            justify-content: space-between;
+            width: 220px;
+            font-size: 0.85em;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 380px;
+            margin-top: 6px;
+        }
+
+        .error {
+            background-color: rgba(255, 77, 79, 0.08);
+            border: 1px solid rgba(255, 77, 79, 0.25);
+            color: #c23;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            margin-bottom: 14px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: var(--primary);
+        }
+
+        .spinner {
+            border: 4px solid #f1f4fb;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .install-banner {
+            background: var(--card);
+            padding: 14px 16px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 12px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            gap: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .install-banner.show {
+            display: flex;
+        }
+
+        .install-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: background 0.2s ease, transform 0.2s ease;
+            box-shadow: 0 12px 24px rgba(10, 132, 255, 0.25);
+        }
+
+        .install-button:hover {
+            background: var(--primary-soft);
+            transform: translateY(-1px);
+        }
+
+        .close-banner {
+            background: rgba(15, 23, 42, 0.05);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.6em;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .gauge-container {
+                width: 160px;
+                height: 160px;
+            }
+
+            .metric-value {
+                font-size: 1.9em;
+            }
+        }
+
+        .logout-button {
+            background: #ff3b30;
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 700;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: 0 10px 18px rgba(255, 59, 48, 0.2);
+            white-space: nowrap;
+        }
+
+        .logout-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 22px rgba(255, 59, 48, 0.25);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f1f4fb;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-spinner.active {
+            display: inline-block;
+        }
+
+        .chart-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: var(--radius-lg);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(2px);
+            z-index: 10;
+        }
+
+        .chart-overlay.active {
+            display: flex;
+        }
+
+        .chart-overlay-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f1f4fb;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="install-banner" id="installBanner">
+            <span>Install this app on your device for offline access and quick launch</span>
+            <div>
+                <button class="install-button" id="installButton">Install App</button>
+                <button class="close-banner" id="closeBanner">×</button>
+            </div>
+        </div>
+
+        <header>
+            <div class="header-content">
+                <h1>☀️ Solar Meter Monitor</h1>
+                <p class="timestamp" id="timestamp"></p>
+            </div>
+            <div class="loading-spinner" id="loadingSpinner"></div>
+            <button class="logout-button" id="logoutButton">Logout</button>
+        </header>
+
+        <div id="errorContainer"></div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h2>Current Power</h2>
+                <div class="gauge-wrapper">
+                    <div class="gauge-container">
+                        <canvas id="powerGauge"></canvas>
+                    </div>
+                    <div class="gauge-limits">
+                        <span>0W</span>
+                        <span>4.500W</span>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Current Load</div>
+                    <div class="metric-value" id="powerValue">-</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Total Yield</h2>
+                <div class="metric">
+                    <div class="metric-label">Overall Energy Produced</div>
+                    <div class="metric-value" id="yieldValue">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Today's Power Production</h2>
+            <div class="chart-container" style="position: relative;">
+                <canvas id="powerChart"></canvas>
+                <div class="chart-overlay" id="powerChartOverlay">
+                    <div class="chart-overlay-spinner"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Yearly Energy Production</h2>
+            <div class="chart-container" style="height: 320px; position: relative;">
+                <canvas id="yearlyYieldChart"></canvas>
+                <div class="chart-overlay" id="yearlyChartOverlay">
+                    <div class="chart-overlay-spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/app.js" defer></script>
+</body>
+
+</html>

@@ -21,11 +21,6 @@ interface CloudflareEnv {
 
 const app = new Hono<{ Bindings: CloudflareEnv }>();
 
-// Health check endpoint
-app.get('/health', (c) => {
-    return c.json({ status: 'ok' });
-});
-
 // Current data endpoint
 app.get('/current', async (c) => {
     try {

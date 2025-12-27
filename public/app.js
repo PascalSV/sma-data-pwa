@@ -1,0 +1,437 @@
+// Get PWA access token
+function getPwaToken() {
+    return sessionStorage.getItem('pwaToken') || localStorage.getItem('pwaToken');
+}
+
+// Get API secret from global variable or localStorage
+function getApiSecret() {
+    // Try to get from window object (injected by server)
+    if (typeof window.API_SECRET !== 'undefined') {
+        return window.API_SECRET;
+    }
+    // Fallback to localStorage
+    return localStorage.getItem('apiSecret');
+}
+
+// Helper to make authenticated API calls
+async function fetchWithAuth(url) {
+    const pwaToken = getPwaToken();
+    const apiSecret = getApiSecret();
+    const headers = {};
+
+    if (pwaToken) {
+        headers['Authorization'] = `Bearer ${pwaToken}`;
+    }
+
+    if (apiSecret) {
+        headers['X-API-Key'] = `Bearer ${apiSecret}`;
+    }
+
+    return fetch(url, { headers });
+}
+
+// Check PWA authentication on page load
+async function checkPwaAuth() {
+    const token = getPwaToken();
+    if (!token) {
+        // Redirect to auth page
+        window.location.href = '/auth.html';
+        return;
+    }
+
+    // Verify token is still valid
+    try {
+        const response = await fetch('/auth-check', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+            // Token invalid, redirect to auth
+            sessionStorage.removeItem('pwaToken');
+            window.location.href = '/auth.html';
+        }
+    } catch (error) {
+        console.error('Auth check failed:', error);
+    }
+}
+
+// Logout handler
+function logout() {
+    sessionStorage.removeItem('pwaToken');
+    localStorage.removeItem('pwaToken');
+    window.location.href = '/auth.html';
+}
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed:', err));
+}
+
+// PWA Install Banner
+let deferredPrompt;
+
+function setupInstallBanner() {
+    const installBanner = document.getElementById('installBanner');
+    const installButton = document.getElementById('installButton');
+    const closeBanner = document.getElementById('closeBanner');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBanner?.classList.add('show');
+    });
+
+    installButton?.addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to the install prompt: ${outcome}`);
+            deferredPrompt = null;
+            installBanner?.classList.remove('show');
+        }
+    });
+
+    closeBanner?.addEventListener('click', () => {
+        installBanner?.classList.remove('show');
+    });
+}
+
+function setupLogoutButton() {
+    const logoutButton = document.getElementById('logoutButton');
+    logoutButton?.addEventListener('click', logout);
+}// Chart instances
+let powerGaugeChart = null;
+let yieldGaugeChart = null;
+let powerTimeSeriesChart = null;
+let yearlyYieldChart = null;
+
+// Initialize gauges
+function initializeGauges() {
+    const gaugeOptions = {
+        type: 'doughnut',
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            circumference: 180,
+            rotation: 270,
+            cutout: '75%',
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            }
+        }
+    };
+
+    // Power Gauge
+    const powerGaugeCtx = document.getElementById('powerGauge');
+    powerGaugeChart = new Chart(powerGaugeCtx, {
+        ...gaugeOptions,
+        data: {
+            labels: ['Used', 'Remaining'],
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: ['#0a84ff', '#e0e0e0'],
+                borderWidth: 0
+            }]
+        }
+    });
+}
+
+// Initialize time series chart
+function initializeTimeSeries() {
+    const timeSeriesCtx = document.getElementById('powerChart');
+    powerTimeSeriesChart = new Chart(timeSeriesCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Power (W)',
+                data: [],
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return value.toLocaleString() + ' W';
+                        }
+                    }
+                },
+                x: {
+                    display: true
+                }
+            }
+        }
+    });
+}
+
+// Initialize yearly yield bar chart
+function initializeYearlyYieldChart() {
+    const yearlyCtx = document.getElementById('yearlyYieldChart');
+    yearlyYieldChart = new Chart(yearlyCtx, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Energy (kWh)',
+                data: [],
+                backgroundColor: '#0a84ff',
+                borderRadius: 10,
+                hoverBackgroundColor: '#5ea0ff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `${ctx.parsed.y.toLocaleString()} kWh`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: (value) => `${value.toLocaleString()} kWh`
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Fetch and update data
+async function fetchData() {
+    try {
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const powerChartOverlay = document.getElementById('powerChartOverlay');
+        const yearlyChartOverlay = document.getElementById('yearlyChartOverlay');
+        const errorContainer = document.getElementById('errorContainer');
+
+        loadingSpinner?.classList.add('active');
+        powerChartOverlay?.classList.add('active');
+        yearlyChartOverlay?.classList.add('active');
+        errorContainer.innerHTML = '';
+
+        // Fetch current data
+        const currentResponse = await fetchWithAuth('/api/current');
+        if (!currentResponse.ok && currentResponse.status === 401) {
+            throw new Error('Unauthorized: Invalid API credentials');
+        }
+        const currentData = await currentResponse.json();
+
+        if (currentData.success) {
+            updateMetrics(currentData.data);
+        }
+
+        // Fetch today's data
+        const todayResponse = await fetchWithAuth('/api/today');
+        if (!todayResponse.ok && todayResponse.status === 401) {
+            throw new Error('Unauthorized: Invalid API credentials');
+        }
+        const todayData = await todayResponse.json();
+
+        if (todayData.success) {
+            updateTimeSeries(todayData.data);
+        }
+
+        // Fetch yearly yield data
+        const yearlyResponse = await fetchWithAuth('/api/yearly-yield');
+        if (!yearlyResponse.ok && yearlyResponse.status === 401) {
+            throw new Error('Unauthorized: Invalid API credentials');
+        }
+        const yearlyData = await yearlyResponse.json();
+
+        if (yearlyData.success) {
+            updateYearlyYield(yearlyData.data);
+        }
+
+        // Update timestamp
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        const errorContainer = document.getElementById('errorContainer');
+        errorContainer.innerHTML = `<div class="error">Failed to fetch data: ${error.message}</div>`;
+    } finally {
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const powerChartOverlay = document.getElementById('powerChartOverlay');
+        const yearlyChartOverlay = document.getElementById('yearlyChartOverlay');
+        loadingSpinner?.classList.remove('active');
+        powerChartOverlay?.classList.remove('active');
+        yearlyChartOverlay?.classList.remove('active');
+    }
+}
+
+// Update metric displays and gauges
+function updateMetrics(data) {
+    const power = Math.round(data.power || 0);
+    const yield_ = Math.round(data.total_yield || 0);
+
+    // Update values
+    document.getElementById('powerValue').textContent = power.toLocaleString() + ' W';
+    document.getElementById('yieldValue').textContent = Math.round(yield_ / 1000).toLocaleString() + ' kWh';
+
+    // Update power gauge (assuming max 4500W)
+    const maxPower = 4500;
+    const powerPercentage = Math.min((power / maxPower) * 100, 100);
+    if (powerGaugeChart) {
+        powerGaugeChart.data.datasets[0].data = [powerPercentage, 100 - powerPercentage];
+        powerGaugeChart.update();
+    }
+}
+
+// Update time series chart
+function updateTimeSeries(data) {
+    if (!Array.isArray(data) || data.length === 0) return;
+
+    // Sort by timestamp ascending
+    const sortedData = [...data].sort((a, b) => a.TimeStamp - b.TimeStamp);
+
+    const labels = sortedData.map(item => {
+        const date = new Date(item.TimeStamp * 1000);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    });
+
+    const powers = sortedData.map(item => Math.round(item.Power || 0));
+
+    if (powerTimeSeriesChart) {
+        powerTimeSeriesChart.data.labels = labels;
+        powerTimeSeriesChart.data.datasets[0].data = powers;
+        powerTimeSeriesChart.update();
+    }
+}
+
+// Update yearly yield bar chart
+function updateYearlyYield(data) {
+    if (!Array.isArray(data) || data.length === 0 || !yearlyYieldChart) return;
+
+    // Normalize fields: accept Year/year and Yield/Total/total_yield
+    const normalized = data.map(item => {
+        const year = item.year ?? item.Year ?? item.year_value ?? item.yearVal;
+        const yieldWh = item.yield ?? item.Yield ?? item.total ?? item.Total ?? item.total_yield ?? 0;
+        return {
+            year: year ?? '-',
+            kwh: Math.round((yieldWh || 0) / 1000)
+        };
+    }).filter(entry => entry.year !== '-');
+
+    // Sort by year ascending if numeric
+    const sorted = normalized.sort((a, b) => Number(a.year) - Number(b.year));
+
+    // Calculate year-over-year difference, clamped to >= 0
+    const differences = sorted.map((entry, idx) => {
+        if (idx === 0) {
+            // First year: show as difference from zero (or absolute)
+            return entry.kwh;
+        }
+        // Subsequent years: show difference from previous year, min 0
+        return Math.max(0, entry.kwh - sorted[idx - 1].kwh);
+    });
+
+    const labels = sorted.map(entry => entry.year);
+    const currentYear = new Date().getFullYear();
+
+    // Calculate mean excluding partial years (first year and current year)
+    const fullYearDifferences = differences.filter((_, idx) => {
+        const yearValue = Number(sorted[idx].year);
+        // Exclude first year and current year from mean calculation
+        return idx > 0 && yearValue !== currentYear;
+    });
+
+    const meanValue = fullYearDifferences.length > 0
+        ? fullYearDifferences.reduce((a, b) => a + b, 0) / fullYearDifferences.length
+        : (differences.length > 0 ? differences.reduce((a, b) => a + b, 0) / differences.length : 0);
+
+    yearlyYieldChart.data.labels = labels;
+    yearlyYieldChart.data.datasets[0].data = differences;
+
+    // Add or update mean line (always at end for top rendering)
+    const meanLineDataset = {
+        label: `Mean (${Math.round(meanValue).toLocaleString()} kWh)`,
+        data: new Array(differences.length).fill(meanValue),
+        type: 'line',
+        borderColor: '#ff9500',
+        borderWidth: 3,
+        borderDash: [5, 5],
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+        spanGaps: true,
+        xAxisID: 'x',
+        yAxisID: 'y',
+        zIndex: 10
+    };
+
+    if (yearlyYieldChart.data.datasets.length > 1) {
+        yearlyYieldChart.data.datasets[1] = meanLineDataset;
+    } else {
+        yearlyYieldChart.data.datasets.push(meanLineDataset);
+    }
+    yearlyYieldChart.update();
+}
+
+// Initialize app
+function initializeApp() {
+    // Check authentication first
+    checkPwaAuth();
+
+    // Setup event listeners
+    setupInstallBanner();
+    setupLogoutButton();
+
+    initializeGauges();
+    initializeTimeSeries();
+    initializeYearlyYieldChart();
+    fetchData();
+
+    // Refresh data every 5 minutes
+    setInterval(fetchData, 5 * 60 * 1000);
+
+    // Refresh every 30 seconds for near real-time updates
+    setInterval(fetchData, 30 * 1000);
+}
+
+// Start when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+}

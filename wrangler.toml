@@ -1,11 +1,12 @@
-# This is the root wrangler.toml - it's kept for reference only
-# For deployment, use:
-# - api/wrangler.toml for the API service
-# - pwa/wrangler.toml for the PWA service
-#
-# Use npm scripts for easier deployment:
-# npm run deploy:api   - Deploy API only
-# npm run deploy:pwa   - Deploy PWA only
-# npm run deploy       - Deploy both
-#
-# See README.md for more information
+name = "sma-data-pwa"
+main = "src/index.ts"
+
+# Align with latest deploy date
+compatibility_date = "2025-12-27"
+
+# Static Assets
+[assets]
+directory = "./public"
+
+[env.production]
+vars = { ENVIRONMENT = "production" }
