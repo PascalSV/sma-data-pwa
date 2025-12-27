@@ -67,7 +67,8 @@ app.get('/auth.html', (c) => {
 // Serve static files from the public directory
 // Use __STATIC_CONTENT_MANIFEST if available, otherwise serve from filesystem
 try {
-    app.use('/*', serveStatic({ root: './', manifest: (global as any).__STATIC_CONTENT_MANIFEST }));
+    const manifest = typeof __STATIC_CONTENT_MANIFEST !== 'undefined' ? __STATIC_CONTENT_MANIFEST : {};
+    app.use('/*', serveStatic({ root: './', manifest: manifest as any }));
 } catch (e) {
     // Fallback: If manifest is not available (development mode), don't use serveStatic
     console.log('Static manifest not available, using development mode');
@@ -99,9 +100,9 @@ app.get('/api/current', async (c) => {
             headers: getAuthHeaders(c)
         });
         const data = await response.json();
-        return c.json(data, { status: response.status });
+        return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch current data' }, { status: 500 });
+        return c.json({ error: 'Failed to fetch current data' }, 500 as any);
     }
 });
 
@@ -111,9 +112,9 @@ app.get('/api/current-and-max', async (c) => {
             headers: getAuthHeaders(c)
         });
         const data = await response.json();
-        return c.json(data, { status: response.status });
+        return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch current and max data' }, { status: 500 });
+        return c.json({ error: 'Failed to fetch current and max data' }, 500 as any);
     }
 });
 
@@ -123,9 +124,9 @@ app.get('/api/today', async (c) => {
             headers: getAuthHeaders(c)
         });
         const data = await response.json();
-        return c.json(data, { status: response.status });
+        return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch today\'s data' }, { status: 500 });
+        return c.json({ error: 'Failed to fetch today\'s data' }, 500 as any);
     }
 });
 
