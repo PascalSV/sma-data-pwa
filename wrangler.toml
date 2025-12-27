@@ -1,4 +1,4 @@
-name = "solar-meter-server"
+name = "sma-data-pwa"
 type = "service"
 main = "src/index.ts"
 
