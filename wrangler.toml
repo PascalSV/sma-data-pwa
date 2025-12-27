@@ -1,16 +1,11 @@
-name = "solar-meter-server"
-type = "service"
-main = "src/index.ts"
-
-compatibility_date = "2025-01-09"
-
-# D1 Database bindings
-[[d1_databases]]
-binding = "DB"
-database_name = "solar_meter_values"
-database_id = "a9ea65ef-bfba-42af-baa8-ea60520d4d1f"
-
-# Routes
-routes = [
-  { pattern = "sma-server.everyday-apps.org/*", zone_id = "562991781207dfc9e64451bec4e2f17b" }
-]
+# This is the root wrangler.toml - it's kept for reference only
+# For deployment, use:
+# - api/wrangler.toml for the API service
+# - pwa/wrangler.toml for the PWA service
+#
+# Use npm scripts for easier deployment:
+# npm run deploy:api   - Deploy API only
+# npm run deploy:pwa   - Deploy PWA only
+# npm run deploy       - Deploy both
+#
+# See README.md for more information

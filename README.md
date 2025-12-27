@@ -1,111 +1,136 @@
-# Solar Meter API
+# Solar Meter API & PWA Project
 
-A Cloudflare Workers TypeScript API that retrieves solar meter data from a D1 database.
+A Cloudflare Workers-based project providing both a REST API and a Progressive Web App (PWA) for real-time solar meter monitoring.
+
+## Project Structure
+
+```
+.
+├── api/                    # REST API for solar data
+│   ├── src/
+│   │   └── index.ts       # API endpoints
+│   ├── wrangler.toml      # API configuration
+│   └── tsconfig.json      # TypeScript config
+├── pwa/                    # Progressive Web App
+│   ├── src/
+│   │   └── index.ts       # PWA worker
+│   ├── public/
+│   │   ├── index.html     # Main HTML
+│   │   ├── app.js         # Frontend logic
+│   │   ├── sw.js          # Service Worker
+│   │   └── manifest.json  # PWA manifest
+│   ├── wrangler.toml      # PWA configuration
+│   └── tsconfig.json      # TypeScript config
+├── package.json           # Root dependencies
+└── wrangler.toml         # (Deprecated - use api/wrangler.toml and pwa/wrangler.toml)
+```
 
 ## Features
 
-- **TypeScript** for type-safe code
-- **Hono** framework for lightweight routing
-- **Cloudflare D1** database integration
-- **Workers** serverless platform
+### API
+- **Current Power**: Get the latest power output
+- **Current & Max**: Fetch today's first, max, and latest readings
+- **Max Yield**: Get the maximum power output record
+- **Today's Data**: Retrieve all readings for the current day
 
-## Prerequisites
+### PWA
+- **Real-time Gauges**: Visual representations of current power and daily yield
+- **Power Chart**: Time-series chart of today's power production
+- **Offline Support**: Service Worker caching for offline access
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Installable**: Can be installed as a standalone app on supported devices
 
-- [Node.js](https://nodejs.org/) 18+ installed
-- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) CLI installed globally
-- A Cloudflare account with D1 database access
-- A D1 database named `solar_meter_values` with a `DayData` table
+## Development
 
-## Setup
+### Prerequisites
+- Node.js 18+
+- Wrangler CLI (installed as dev dependency)
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-2. **Configure Wrangler:**
-   Update `wrangler.toml` with your:
-   - `database_id`: Your D1 database ID
-   - `zone_id`: Your Cloudflare zone ID (if deploying to a domain)
-
-   To find your database ID:
-   ```bash
-   wrangler d1 list
-   ```
-
-3. **Local Development:**
-   ```bash
-   npm run dev
-   ```
-   The API will be available at `http://localhost:8787`
-
-4. **Type Checking:**
-   ```bash
-   npm run type-check
-   ```
-
-## API Endpoints
-
-### GET `/health`
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok"
-}
+### Setup
+```bash
+npm install
 ```
 
-### GET `/current`
-Retrieves the latest solar meter data.
+### Development Server
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "power": 1234,
-    "timestamp": "2024-01-15 14:35:00",
-    "total_yield": 5678
-  }
-}
+Run the API:
+```bash
+npm run dev:api
 ```
 
-**Error Response (404):**
-```json
-{
-  "error": "No data found"
-}
+In another terminal, run the PWA:
+```bash
+npm run dev:pwa
 ```
 
-**Error Response (500):**
-```json
-{
-  "success": false,
-  "error": "Failed to fetch solar meter data",
-  "details": "error message"
-}
+### Type Checking
+```bash
+npm run type-check
+```
+
+### Building
+```bash
+npm run build:api
+npm run build:pwa
 ```
 
 ## Deployment
 
-Deploy to Cloudflare Workers:
-
+### Deploy Both
 ```bash
 npm run deploy
 ```
 
-## Database Schema
+### Deploy Individual Services
+```bash
+npm run deploy:api    # Deploy API only
+npm run deploy:pwa    # Deploy PWA only
+```
 
-The `DayData` table should have at least the following columns:
-- `Power` (numeric) - Current power output
-- `TotalYield` (numeric) - Total energy yield
+## Technologies Used
 
-## Development Notes
+- **Hono**: Fast web framework
+- **Cloudflare Workers**: Serverless compute
+- **Chart.js**: Data visualization
+- **Service Workers**: Offline caching
+- **TypeScript**: Type safety
+- **Cloudflare Secrets**: API authentication
 
-- The timestamp in the SQL query uses a hardcoded Unix timestamp (1766823300). Update this to use dynamic values as needed.
-- Error handling includes detailed error messages for debugging during development.
-- TypeScript strict mode is enabled for better type safety.
+## API Authentication
+
+The API is protected with Cloudflare secret-based authentication:
+
+- **Protected endpoints**: All data endpoints require `Authorization: Bearer {secret}` header
+- **Secret management**: Uses Cloudflare's secret store via `SMA_DATA_SERVER_ACCESS`
+
+See [API_AUTH_SETUP.md](API_AUTH_SETUP.md) for detailed setup instructions.
+
+## API Endpoints
+
+The PWA communicates with the API through these endpoints:
+
+- `GET /api/current` - Current power and yield
+- `GET /api/current-and-max` - Today's data summary
+- `GET /api/today` - All readings for today
+
+## Customization
+
+### Gauge Limits
+Edit `pwa/public/app.js` to adjust gauge max values:
+```javascript
+const maxPower = 6000;      // Max power in Watts
+const maxYield = 30000;     // Max yield in Wh
+```
+
+### Refresh Intervals
+Modify data fetch intervals in `pwa/public/app.js`:
+```javascript
+setInterval(fetchData, 30 * 1000);        // 30 seconds
+setInterval(fetchData, 5 * 60 * 1000);    // 5 minutes
+```
+
+### Styling
+Customize colors and layout in `pwa/public/index.html` `<style>` section.
 
 ## License
 

@@ -1,0 +1,21 @@
+name = "sma-data-api"
+type = "service"
+main = "src/index.ts"
+
+compatibility_date = "2025-01-09"
+
+# Secrets
+[env.production]
+vars = { ENVIRONMENT = "production" }
+secrets = ["SMA_DATA_SERVER_ACCESS"]
+
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "solar_meter_values"
+database_id = "a9ea65ef-bfba-42af-baa8-ea60520d4d1f"
+
+# Routes
+routes = [
+  { pattern = "api.sma-reader.everyday-apps.org/*", zone_id = "562991781207dfc9e64451bec4e2f17b" }
+]
