@@ -11,6 +11,28 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <style>
+        @font-face {
+            font-family: 'D-DIN';
+            src: url('/fonts/D-DIN.woff2') format('woff2'),
+                url('/fonts/D-DIN.woff') format('woff'),
+                url('/fonts/D-DIN.otf') format('opentype'),
+                url('/fonts/D-DIN.ttf') format('truetype');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'D-DIN';
+            src: url('/fonts/D-DIN-Bold.woff2') format('woff2'),
+                url('/fonts/D-DIN-Bold.woff') format('woff'),
+                url('/fonts/D-DIN-Bold.otf') format('opentype'),
+                url('/fonts/D-DIN-Bold.ttf') format('truetype');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -18,26 +40,31 @@
         }
 
         :root {
-            --bg: #f5f7ff;
-            --bg-2: #e8edf8;
-            --card: rgba(255, 255, 255, 0.9);
-            --primary: #0a84ff;
-            --primary-soft: #5ea0ff;
-            --accent: #30d158;
-            --text: #0f172a;
-            --muted: #5b6477;
-            --shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
+            --bg: #0f162b;
+            --bg-2: #0c1120;
+            --card: rgba(255, 255, 255, 0.04);
+            --card-stroke: rgba(255, 255, 255, 0.08);
+            --primary: #7cf3c6;
+            --primary-strong: #57e3b2;
+            --accent: #ffb454;
+            --text: #f8fbff;
+            --muted: #95a3c0;
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
             --radius-lg: 18px;
             --radius-md: 14px;
+            --glass: blur(12px);
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
-            background: radial-gradient(120% 120% at 20% 20%, var(--bg) 0%, var(--bg-2) 100%);
+            font-family: 'D-DIN', 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(120% 120% at 20% 20%, #192444 0%, #0c1120 45%, #080c18 100%);
             min-height: 100vh;
-            padding: clamp(16px, 4vw, 28px);
+            padding: 0;
             color: var(--text);
-            line-height: 1.5;
+            line-height: 1.6;
+            padding-left: max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
         }
 
         .container {
@@ -46,39 +73,58 @@
             display: flex;
             flex-direction: column;
             gap: 18px;
+            padding-top: max(16px, calc(16px + env(safe-area-inset-top)));
         }
 
         header {
-            background: var(--card);
-            padding: 18px 20px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow);
-            margin-bottom: 6px;
+            background: transparent;
+            padding: 12px max(20px, env(safe-area-inset-right)) 12px 0;
+            border-radius: 0;
+            box-shadow: none;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 16px;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            backdrop-filter: none;
+            border: none;
         }
 
         .header-content {
             flex: 1;
+            display: flex;
+            flex-direction: row;
+            gap: 0;
+            align-items: center;
         }
 
         h1 {
-            font-size: 1.9em;
+            font-size: 1.85em;
             color: var(--text);
             letter-spacing: -0.02em;
-            margin-bottom: 6px;
+            margin: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0;
+            flex: 1;
         }
 
         .timestamp {
             color: var(--muted);
-            font-size: 0.95em;
+            font-size: 0.9em;
+            white-space: nowrap;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 0;
+        }
+
+        .header-icon {
+            display: none;
         }
 
         .dashboard {
@@ -93,14 +139,15 @@
             border-radius: var(--radius-lg);
             padding: 18px;
             box-shadow: var(--shadow);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            transition: transform 0.25s ease, box-shadow 0.25s ease;
-            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-stroke);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            backdrop-filter: var(--glass);
         }
 
         .card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 20px 44px rgba(15, 23, 42, 0.12);
+            box-shadow: 0 24px 52px rgba(0, 0, 0, 0.45);
+            border-color: rgba(255, 255, 255, 0.16);
         }
 
         .card h2 {
@@ -108,7 +155,7 @@
             color: var(--text);
             margin-bottom: 14px;
             padding-bottom: 10px;
-            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             letter-spacing: -0.01em;
         }
 
@@ -129,6 +176,24 @@
             padding: 20px 0 8px;
         }
 
+        .metric-compact {
+            padding: 8px 0 0;
+        }
+
+        .metric-large {
+            padding: 40px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .card-centered {
+            display: flex;
+            flex-direction: column;
+            min-height: 320px;
+        }
+
         .metric-label {
             color: var(--muted);
             font-size: 0.9em;
@@ -140,6 +205,10 @@
             font-weight: 700;
             color: var(--primary);
             letter-spacing: -0.01em;
+        }
+
+        .metric-large .metric-value {
+            font-size: 4.2em;
         }
 
         .metric-unit {
@@ -171,9 +240,9 @@
         }
 
         .error {
-            background-color: rgba(255, 77, 79, 0.08);
-            border: 1px solid rgba(255, 77, 79, 0.25);
-            color: #c23;
+            background: rgba(255, 99, 132, 0.12);
+            border: 1px solid rgba(255, 99, 132, 0.35);
+            color: #ffb3c1;
             padding: 14px;
             border-radius: var(--radius-md);
             margin-bottom: 14px;
@@ -186,7 +255,7 @@
         }
 
         .spinner {
-            border: 4px solid #f1f4fb;
+            border: 4px solid rgba(255, 255, 255, 0.1);
             border-top: 4px solid var(--primary);
             border-radius: 50%;
             width: 42px;
@@ -196,11 +265,11 @@
         }
 
         @keyframes spin {
-            0% {
+            from {
                 transform: rotate(0deg);
             }
 
-            100% {
+            to {
                 transform: rotate(360deg);
             }
         }
@@ -215,7 +284,7 @@
             align-items: center;
             box-shadow: var(--shadow);
             gap: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid var(--card-stroke);
         }
 
         .install-banner.show {
@@ -224,24 +293,24 @@
 
         .install-button {
             background: var(--primary);
-            color: white;
+            color: #0c1120;
             border: none;
             padding: 10px 18px;
             border-radius: 999px;
             cursor: pointer;
             font-weight: 700;
             transition: background 0.2s ease, transform 0.2s ease;
-            box-shadow: 0 12px 24px rgba(10, 132, 255, 0.25);
+            box-shadow: 0 12px 24px rgba(124, 243, 198, 0.35);
         }
 
         .install-button:hover {
-            background: var(--primary-soft);
+            background: var(--primary-strong);
             transform: translateY(-1px);
         }
 
         .close-banner {
-            background: rgba(15, 23, 42, 0.05);
-            border: none;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--card-stroke);
             width: 36px;
             height: 36px;
             border-radius: 50%;
@@ -274,30 +343,11 @@
             }
         }
 
-        .logout-button {
-            background: #ff3b30;
-            color: white;
-            border: none;
-            padding: 9px 14px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.9em;
-            font-weight: 700;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            box-shadow: 0 10px 18px rgba(255, 59, 48, 0.2);
-            white-space: nowrap;
-        }
-
-        .logout-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 14px 22px rgba(255, 59, 48, 0.25);
-        }
-
         .loading-spinner {
             display: none;
             width: 24px;
             height: 24px;
-            border: 3px solid #f1f4fb;
+            border: 3px solid rgba(255, 255, 255, 0.12);
             border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -307,18 +357,43 @@
             display: inline-block;
         }
 
+        .card-spinner {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            z-index: 5;
+            display: none;
+        }
+
+        .card-spinner.active {
+            display: block;
+        }
+
+        .card-spinner .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-top: 2px solid var(--primary);
+            display: inline-block;
+        }
+
+        .no-data {
+            color: var(--muted);
+            font-size: 0.95em;
+            text-align: center;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+
         .chart-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.7);
+            inset: 0;
+            background: rgba(12, 17, 32, 0.6);
             border-radius: var(--radius-lg);
             display: none;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(2px);
+            backdrop-filter: blur(3px);
             z-index: 10;
         }
 
@@ -329,16 +404,36 @@
         .chart-overlay-spinner {
             width: 40px;
             height: 40px;
-            border: 4px solid #f1f4fb;
+            border: 4px solid rgba(255, 255, 255, 0.12);
             border-top: 4px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+
+        .pull-indicator {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            text-align: center;
+            color: var(--muted);
+            font-weight: 700;
+            font-size: 0.9em;
+            padding: 6px 0;
+            transform: translateY(-12px);
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .pull-indicator.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
     </style>
 </head>
 
 <body>
     <div class="container">
+        <div class="pull-indicator" id="pullIndicator">Pull to refresh</div>
         <div class="install-banner" id="installBanner">
             <span>Install this app on your device for offline access and quick launch</span>
             <div>
@@ -349,18 +444,19 @@
 
         <header>
             <div class="header-content">
-                <h1>☀️ Solar Meter Monitor</h1>
+                <h1 class="header-title"><span class="header-icon">🔆📟📈</span><span>Solar Meter Monitor</span></h1>
                 <p class="timestamp" id="timestamp"></p>
             </div>
-            <div class="loading-spinner" id="loadingSpinner"></div>
-            <button class="logout-button" id="logoutButton">Logout</button>
         </header>
 
         <div id="errorContainer"></div>
 
         <div class="dashboard">
             <div class="card">
-                <h2>Current Power</h2>
+                <h2>Current Load</h2>
+                <div class="card-spinner active" id="powerCardSpinner">
+                    <div class="loading-spinner"></div>
+                </div>
                 <div class="gauge-wrapper">
                     <div class="gauge-container">
                         <canvas id="powerGauge"></canvas>
@@ -370,23 +466,24 @@
                         <span>4.500W</span>
                     </div>
                 </div>
-                <div class="metric">
-                    <div class="metric-label">Current Load</div>
+                <div class="metric metric-compact">
                     <div class="metric-value" id="powerValue">-</div>
                 </div>
             </div>
 
-            <div class="card">
-                <h2>Total Yield</h2>
-                <div class="metric">
-                    <div class="metric-label">Overall Energy Produced</div>
+            <div class="card card-centered">
+                <h2>Total Energy Production</h2>
+                <div class="card-spinner active" id="yieldCardSpinner">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="metric metric-large">
                     <div class="metric-value" id="yieldValue">-</div>
                 </div>
             </div>
         </div>
 
         <div class="card">
-            <h2>Today's Power Production</h2>
+            <h2>Today's Energy Production</h2>
             <div class="chart-container" style="position: relative;">
                 <canvas id="powerChart"></canvas>
                 <div class="chart-overlay" id="powerChartOverlay">

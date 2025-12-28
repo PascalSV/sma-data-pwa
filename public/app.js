@@ -54,13 +54,6 @@ async function checkPwaAuth() {
     }
 }
 
-// Logout handler
-function logout() {
-    sessionStorage.removeItem('pwaToken');
-    localStorage.removeItem('pwaToken');
-    window.location.href = '/auth.html';
-}
-
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
@@ -97,10 +90,54 @@ function setupInstallBanner() {
     });
 }
 
-function setupLogoutButton() {
-    const logoutButton = document.getElementById('logoutButton');
-    logoutButton?.addEventListener('click', logout);
-}// Chart instances
+function setupPullToRefresh() {
+    const indicator = document.getElementById('pullIndicator');
+    if (!indicator) return;
+
+    const threshold = 70;
+    let startY = 0;
+    let pulling = false;
+
+    window.addEventListener('touchstart', (e) => {
+        if (window.scrollY === 0 && e.touches.length === 1) {
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!pulling || e.touches.length !== 1) return;
+        const delta = e.touches[0].clientY - startY;
+        if (delta > 0 && window.scrollY === 0) {
+            const clamped = Math.min(delta, threshold * 1.5);
+            indicator.style.transform = `translateY(${Math.max(clamped / 3 - 12, 0)}px)`;
+            indicator.textContent = delta > threshold ? 'Release to refresh' : 'Pull to refresh';
+            indicator.classList.add('visible');
+        }
+    }, { passive: true });
+
+    window.addEventListener('touchend', async () => {
+        if (!pulling) return;
+        const shouldRefresh = indicator.textContent === 'Release to refresh';
+        indicator.textContent = shouldRefresh ? 'Refreshing...' : 'Pull to refresh';
+        indicator.style.transform = 'translateY(0)';
+        indicator.classList.add('visible');
+
+        if (shouldRefresh) {
+            await fetchData();
+        }
+
+        setTimeout(() => {
+            indicator.classList.remove('visible');
+            indicator.style.transform = 'translateY(-12px)';
+            indicator.textContent = 'Pull to refresh';
+        }, shouldRefresh ? 500 : 200);
+
+        pulling = false;
+    }, { passive: true });
+}
+
+// Chart instances
 let powerGaugeChart = null;
 let yieldGaugeChart = null;
 let powerTimeSeriesChart = null;
@@ -132,11 +169,12 @@ function initializeGauges() {
     powerGaugeChart = new Chart(powerGaugeCtx, {
         ...gaugeOptions,
         data: {
-            labels: ['Used', 'Remaining'],
+            labels: ['Normal', 'Warning', 'Critical', 'Remaining'],
             datasets: [{
-                data: [0, 100],
-                backgroundColor: ['#0a84ff', '#e0e0e0'],
-                borderWidth: 0
+                data: [60, 20, 20, 0],
+                backgroundColor: ['#7cf3c6', '#ffa500', '#ff4444', '#e0e0e0'],
+                borderColor: '#ffffff',
+                borderWidth: 2
             }]
         }
     });
@@ -152,12 +190,12 @@ function initializeTimeSeries() {
             datasets: [{
                 label: 'Power (W)',
                 data: [],
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderColor: '#7cf3c6',
+                backgroundColor: 'rgba(124, 243, 198, 0.1)',
                 tension: 0.4,
                 fill: true,
                 pointRadius: 4,
-                pointBackgroundColor: '#667eea',
+                pointBackgroundColor: '#7cf3c6',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2
             }]
@@ -202,9 +240,9 @@ function initializeYearlyYieldChart() {
             datasets: [{
                 label: 'Energy (kWh)',
                 data: [],
-                backgroundColor: '#0a84ff',
+                backgroundColor: '#7cf3c6',
                 borderRadius: 10,
-                hoverBackgroundColor: '#5ea0ff'
+                hoverBackgroundColor: '#57e3b2'
             }]
         },
         options: {
@@ -240,12 +278,14 @@ function initializeYearlyYieldChart() {
 // Fetch and update data
 async function fetchData() {
     try {
-        const loadingSpinner = document.getElementById('loadingSpinner');
+        const powerCardSpinner = document.getElementById('powerCardSpinner');
+        const yieldCardSpinner = document.getElementById('yieldCardSpinner');
         const powerChartOverlay = document.getElementById('powerChartOverlay');
         const yearlyChartOverlay = document.getElementById('yearlyChartOverlay');
         const errorContainer = document.getElementById('errorContainer');
 
-        loadingSpinner?.classList.add('active');
+        powerCardSpinner?.classList.add('active');
+        yieldCardSpinner?.classList.add('active');
         powerChartOverlay?.classList.add('active');
         yearlyChartOverlay?.classList.add('active');
         errorContainer.innerHTML = '';
@@ -284,19 +324,18 @@ async function fetchData() {
         }
 
         // Update timestamp
-        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        document.getElementById('timestamp').textContent = 'Refreshed on: ' + new Date().toLocaleString();
 
     } catch (error) {
         console.error('Error fetching data:', error);
         const errorContainer = document.getElementById('errorContainer');
         errorContainer.innerHTML = `<div class="error">Failed to fetch data: ${error.message}</div>`;
     } finally {
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const powerChartOverlay = document.getElementById('powerChartOverlay');
-        const yearlyChartOverlay = document.getElementById('yearlyChartOverlay');
-        loadingSpinner?.classList.remove('active');
-        powerChartOverlay?.classList.remove('active');
-        yearlyChartOverlay?.classList.remove('active');
+        const powerCardSpinner = document.getElementById('powerCardSpinner');
+        const yieldCardSpinner = document.getElementById('yieldCardSpinner');
+        powerCardSpinner?.classList.remove('active');
+        yieldCardSpinner?.classList.remove('active');
+        // Chart overlays are managed by updateTimeSeries/updateYearlyYield functions
     }
 }
 
@@ -309,18 +348,41 @@ function updateMetrics(data) {
     document.getElementById('powerValue').textContent = power.toLocaleString() + ' W';
     document.getElementById('yieldValue').textContent = Math.round(yield_ / 1000).toLocaleString() + ' kWh';
 
-    // Update power gauge (assuming max 4500W)
+    // Update power gauge (assuming max 4500W) with three zones: 0-60% blue, 61-80% yellow, 81-100% red
     const maxPower = 4500;
     const powerPercentage = Math.min((power / maxPower) * 100, 100);
     if (powerGaugeChart) {
-        powerGaugeChart.data.datasets[0].data = [powerPercentage, 100 - powerPercentage];
+        let normalPercentage = 0, warningPercentage = 0, criticalPercentage = 0;
+
+        if (powerPercentage <= 60) {
+            normalPercentage = powerPercentage;
+        } else if (powerPercentage <= 80) {
+            normalPercentage = 60;
+            warningPercentage = powerPercentage - 60;
+        } else {
+            normalPercentage = 60;
+            warningPercentage = 20;
+            criticalPercentage = powerPercentage - 80;
+        }
+
+        const remaining = 100 - powerPercentage;
+        powerGaugeChart.data.datasets[0].data = [normalPercentage, warningPercentage, criticalPercentage, remaining];
         powerGaugeChart.update();
     }
 }
 
 // Update time series chart
 function updateTimeSeries(data) {
-    if (!Array.isArray(data) || data.length === 0) return;
+    const powerChartOverlay = document.getElementById('powerChartOverlay');
+
+    if (!Array.isArray(data) || data.length === 0) {
+        // Show no-data message
+        if (powerChartOverlay) {
+            powerChartOverlay.innerHTML = '<div class="no-data">No data available</div>';
+            powerChartOverlay.classList.add('active');
+        }
+        return;
+    }
 
     // Sort by timestamp ascending
     const sortedData = [...data].sort((a, b) => a.TimeStamp - b.TimeStamp);
@@ -336,12 +398,24 @@ function updateTimeSeries(data) {
         powerTimeSeriesChart.data.labels = labels;
         powerTimeSeriesChart.data.datasets[0].data = powers;
         powerTimeSeriesChart.update();
+        if (powerChartOverlay) {
+            powerChartOverlay.classList.remove('active');
+        }
     }
 }
 
 // Update yearly yield bar chart
 function updateYearlyYield(data) {
-    if (!Array.isArray(data) || data.length === 0 || !yearlyYieldChart) return;
+    const yearlyChartOverlay = document.getElementById('yearlyChartOverlay');
+
+    if (!Array.isArray(data) || data.length === 0 || !yearlyYieldChart) {
+        // Show no-data message
+        if (yearlyChartOverlay) {
+            yearlyChartOverlay.innerHTML = '<div class="no-data">No data available</div>';
+            yearlyChartOverlay.classList.add('active');
+        }
+        return;
+    }
 
     // Normalize fields: accept Year/year and Yield/Total/total_yield
     const normalized = data.map(item => {
@@ -406,6 +480,11 @@ function updateYearlyYield(data) {
         yearlyYieldChart.data.datasets.push(meanLineDataset);
     }
     yearlyYieldChart.update();
+
+    // Hide the no-data overlay when data is present
+    if (yearlyChartOverlay) {
+        yearlyChartOverlay.classList.remove('active');
+    }
 }
 
 // Initialize app
@@ -415,18 +494,12 @@ function initializeApp() {
 
     // Setup event listeners
     setupInstallBanner();
-    setupLogoutButton();
+    setupPullToRefresh();
 
     initializeGauges();
     initializeTimeSeries();
     initializeYearlyYieldChart();
     fetchData();
-
-    // Refresh data every 5 minutes
-    setInterval(fetchData, 5 * 60 * 1000);
-
-    // Refresh every 30 seconds for near real-time updates
-    setInterval(fetchData, 30 * 1000);
 }
 
 // Start when DOM is loaded
