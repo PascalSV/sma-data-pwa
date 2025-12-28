@@ -183,6 +183,7 @@ function initializeGauges() {
 // Initialize time series chart
 function initializeTimeSeries() {
     const timeSeriesCtx = document.getElementById('powerChart');
+    const isMobile = window.innerWidth <= 768;
     powerTimeSeriesChart = new Chart(timeSeriesCtx, {
         type: 'line',
         data: {
@@ -194,10 +195,10 @@ function initializeTimeSeries() {
                 backgroundColor: 'rgba(124, 243, 198, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointRadius: 4,
+                pointRadius: isMobile ? 2 : 4,
                 pointBackgroundColor: '#7cf3c6',
                 pointBorderColor: '#fff',
-                pointBorderWidth: 2
+                pointBorderWidth: isMobile ? 1 : 2
             }]
         },
         options: {
