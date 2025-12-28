@@ -96,19 +96,16 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            background: rgba(12, 17, 32, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 12px max(20px, env(safe-area-inset-right)) 12px 0;
+            background: linear-gradient(to bottom, #0c1120 0%, #0c1120 85%, rgba(12, 17, 32, 0) 100%);
+            padding: 12px max(20px, env(safe-area-inset-right)) 24px 0;
             border-radius: 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            margin-bottom: 12px;
+            box-shadow: none;
+            margin-bottom: 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 16px;
             border: none;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .header-content {
