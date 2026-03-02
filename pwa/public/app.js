@@ -1,3 +1,92 @@
+// i18n - Internationalization support
+const i18n = {
+    currentLanguage: 'en',
+    translations: {
+        de: {
+            'app.title': 'Sonnen-Meter Monitor',
+            'card.currentLoad': 'Aktuelle Last',
+            'card.energyProduction': 'Energieerzeugung',
+            'card.todayProduction': 'Heutige Energieerzeugung',
+            'card.yearlyProduction': 'Jährliche Energieerzeugung',
+            'label.total': 'Gesamt',
+            'label.today': 'Heute',
+            'install.banner': 'Installiere diese App auf deinem Gerät für Offline-Zugriff und schnelle Ausführung',
+            'install.button': 'App installieren',
+            'pull.refresh': 'Zum Aktualisieren hochziehen',
+            'pull.release': 'Zum Aktualisieren loslassen',
+            'pull.refreshing': 'Wird aktualisiert...',
+            'timestamp.refreshed': 'Aktualisiert am:',
+            'chart.power': 'Leistung (W)',
+            'chart.energy': 'Energie (kWh)',
+            'chart.mean': 'Durchschnitt',
+            'gauge.min': '0W',
+            'gauge.max': '4.500W'
+        },
+        en: {
+            'app.title': 'Solar Meter Monitor',
+            'card.currentLoad': 'Current Load',
+            'card.energyProduction': 'Energy Production',
+            'card.todayProduction': 'Today\'s Energy Production',
+            'card.yearlyProduction': 'Yearly Energy Production',
+            'label.total': 'Total',
+            'label.today': 'Today',
+            'install.banner': 'Install this app on your device for offline access and quick launch',
+            'install.button': 'Install App',
+            'pull.refresh': 'Pull to refresh',
+            'pull.release': 'Release to refresh',
+            'pull.refreshing': 'Refreshing...',
+            'timestamp.refreshed': 'Refreshed on:',
+            'chart.power': 'Power (W)',
+            'chart.energy': 'Energy (kWh)',
+            'chart.mean': 'Mean',
+            'gauge.min': '0W',
+            'gauge.max': '4.500W'
+        }
+    },
+
+    getLanguage() {
+        // Check localStorage for saved preference
+        const saved = localStorage.getItem('preferredLanguage');
+        if (saved && this.translations[saved]) return saved;
+
+        // Get browser language
+        const browserLang = navigator.language.split('-')[0].toLowerCase();
+        if (this.translations[browserLang]) return browserLang;
+
+        // Default to English
+        return 'en';
+    },
+
+    t(key) {
+        return this.translations[this.currentLanguage]?.[key] || this.translations['en'][key] || key;
+    },
+
+    init() {
+        this.currentLanguage = this.getLanguage();
+        this.applyTranslations();
+    },
+
+    applyTranslations() {
+        // Update all elements with data-i18n attribute
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            element.textContent = this.t(key);
+        });
+
+        // Update title
+        document.querySelector('title').textContent = this.t('app.title');
+        document.documentElement.lang = this.currentLanguage;
+    },
+
+    setLanguage(lang) {
+        if (this.translations[lang]) {
+            this.currentLanguage = lang;
+            localStorage.setItem('preferredLanguage', lang);
+            this.applyTranslations();
+        }
+    }
+};
+
 // Get PWA access token
 function getPwaToken() {
     return sessionStorage.getItem('pwaToken') || localStorage.getItem('pwaToken');
@@ -158,7 +247,7 @@ function initializeTimeSeries() {
         data: {
             labels: [],
             datasets: [{
-                label: 'Power (W)',
+                label: i18n.t('chart.power'),
                 data: [],
                 borderColor: '#667eea',
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -229,8 +318,16 @@ async function fetchData() {
             updateTimeSeries(todayData.data);
         }
 
-        // Update timestamp
-        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        // Update timestamp with padded date/time
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const dateTimeStr = `${day}.${month}.${year} ${hours}:${minutes}:${seconds}`;
+        document.getElementById('timestamp').textContent = i18n.t('timestamp.refreshed') + ' ' + dateTimeStr;
 
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -288,6 +385,9 @@ function updateTimeSeries(data) {
 
 // Initialize app
 function initializeApp() {
+    // Initialize i18n (language support)
+    i18n.init();
+
     // Check authentication first
     checkPwaAuth();
 

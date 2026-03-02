@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SolarMeter">
 
-    <title>Solar Meter Monitor</title>
+    <title data-i18n="app.title">Solar Meter Monitor</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/icon-180.png">
@@ -530,11 +530,11 @@
 
 <body>
     <div class="container">
-        <div class="pull-indicator" id="pullIndicator">Pull to refresh</div>
+        <div class="pull-indicator" id="pullIndicator" data-i18n="pull.refresh">Pull to refresh</div>
         <div class="install-banner" id="installBanner">
-            <span>Install this app on your device for offline access and quick launch</span>
+            <span data-i18n="install.banner">Install this app on your device for offline access and quick launch</span>
             <div>
-                <button class="install-button" id="installButton">Install App</button>
+                <button class="install-button" id="installButton" data-i18n="install.button">Install App</button>
                 <button class="close-banner" id="closeBanner">×</button>
             </div>
         </div>
@@ -543,7 +543,7 @@
             <div class="header-content">
                 <div class="header-top">
                     <h1 class="header-title"><img src="/icon-transparent.svg" alt="Solar Meter"
-                            class="header-icon"><span>Solar
+                            class="header-icon"><span data-i18n="app.title">Solar
                             Meter Monitor</span></h1>
                 </div>
                 <div class="header-bottom">
@@ -556,7 +556,7 @@
 
         <div class="dashboard">
             <div class="card">
-                <h2>Current Load</h2>
+                <h2 data-i18n="card.currentLoad">Current Load</h2>
                 <div class="card-spinner active" id="powerCardSpinner">
                     <div class="loading-spinner"></div>
                 </div>
@@ -565,8 +565,8 @@
                         <canvas id="powerGauge"></canvas>
                     </div>
                     <div class="gauge-limits">
-                        <span>0W</span>
-                        <span>4.500W</span>
+                        <span data-i18n="gauge.min">0W</span>
+                        <span data-i18n="gauge.max">4.500W</span>
                     </div>
                 </div>
                 <div class="metric metric-compact">
@@ -575,17 +575,17 @@
             </div>
 
             <div class="card card-centered">
-                <h2>Energy Production</h2>
+                <h2 data-i18n="card.energyProduction">Energy Production</h2>
                 <div class="card-spinner active" id="yieldCardSpinner">
                     <div class="loading-spinner"></div>
                 </div>
                 <div class="metrics-row">
                     <div class="metric-column">
-                        <div class="metric-label">Total</div>
+                        <div class="metric-label" data-i18n="label.total">Total</div>
                         <div class="metric-value" id="yieldValue">-</div>
                     </div>
                     <div class="metric-column">
-                        <div class="metric-label">Today</div>
+                        <div class="metric-label" data-i18n="label.today">Today</div>
                         <div class="metric-value" id="todayYieldValue">-</div>
                     </div>
                 </div>
@@ -593,7 +593,7 @@
         </div>
 
         <div class="card">
-            <h2>Today's Energy Production</h2>
+            <h2 data-i18n="card.todayProduction">Today's Energy Production</h2>
             <div class="chart-container" style="position: relative;">
                 <canvas id="powerChart"></canvas>
                 <div class="chart-overlay" id="powerChartOverlay">
@@ -603,7 +603,7 @@
         </div>
 
         <div class="card">
-            <h2>Yearly Energy Production</h2>
+            <h2 data-i18n="card.yearlyProduction">Yearly Energy Production</h2>
             <div class="chart-container" style="height: 320px; position: relative;">
                 <canvas id="yearlyYieldChart"></canvas>
                 <div class="chart-overlay" id="yearlyChartOverlay">
