@@ -205,7 +205,7 @@ function getAuthPageHTML(): string {
         }
 
         .auth-header { text-align: center; margin-bottom: 26px; }
-        .auth-icon { font-size: 2.8em; margin-bottom: 10px; }
+        .auth-icon { width: 80px; height: 80px; margin: 0 auto 16px; display: block; }
         h1 { color: var(--text); font-size: 1.6em; letter-spacing: -0.02em; }
         .auth-subtitle { color: var(--muted); font-size: 0.95em; margin-top: 4px; }
 
@@ -271,7 +271,7 @@ function getAuthPageHTML(): string {
 <body>
     <div class="auth-container">
         <div class="auth-header">
-            <div class="auth-icon">☀️</div>
+            <img src="/icon-transparent.svg" alt="Solar Meter" class="auth-icon">
             <h1>Solar Meter</h1>
             <p class="auth-subtitle">Enter your access token</p>
         </div>
@@ -444,7 +444,7 @@ function getMainPageHTML(): string {
     <div class="container">
         <header>
             <div>
-                <h1>🔆📟📈 Solar Meter Monitor</h1>
+                <h1><img src="/icon-transparent.svg" alt="Solar Meter" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 12px;">Solar Meter Monitor</h1>
                 <p class="timestamp">Loading...</p>
             </div>
         </header>

@@ -10,4 +10,5 @@ compatibility_date = "2025-12-27"
 directory = "./public"
 
 [env.production]
+name = "sma-data-pwa-production"
 vars = { ENVIRONMENT = "production" }

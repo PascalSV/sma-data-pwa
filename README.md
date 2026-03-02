@@ -53,14 +53,14 @@ npm install
 
 ### Development Server
 
-Run the API:
+Run local development (default Worker: `sma-data-pwa`):
 ```bash
-npm run dev:api
+npm run dev
 ```
 
-In another terminal, run the PWA:
+Run development against production environment config (`sma-data-pwa-production`):
 ```bash
-npm run dev:pwa
+npm run dev:prod
 ```
 
 ### Type Checking
@@ -76,15 +76,14 @@ npm run build:pwa
 
 ## Deployment
 
-### Deploy Both
+### Deploy
 ```bash
 npm run deploy
 ```
 
-### Deploy Individual Services
+Deploy to explicit production environment:
 ```bash
-npm run deploy:api    # Deploy API only
-npm run deploy:pwa    # Deploy PWA only
+npm run deploy:prod
 ```
 
 ## Technologies Used

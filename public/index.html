@@ -246,6 +246,28 @@
             font-size: 4.2em;
         }
 
+        .metrics-row {
+            display: flex;
+            flex-direction: row;
+            gap: 24px;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .metric-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .metric-column .metric-value {
+            font-size: 2.4em;
+        }
+
         .metric-unit {
             font-size: 0.85em;
             color: var(--muted);
@@ -522,12 +544,19 @@
             </div>
 
             <div class="card card-centered">
-                <h2>Total Energy Production</h2>
+                <h2>Energy Production</h2>
                 <div class="card-spinner active" id="yieldCardSpinner">
                     <div class="loading-spinner"></div>
                 </div>
-                <div class="metric metric-large">
-                    <div class="metric-value" id="yieldValue">-</div>
+                <div class="metrics-row">
+                    <div class="metric-column">
+                        <div class="metric-label">Total</div>
+                        <div class="metric-value" id="yieldValue">-</div>
+                    </div>
+                    <div class="metric-column">
+                        <div class="metric-label">Today</div>
+                        <div class="metric-value" id="todayYieldValue">-</div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -143,6 +143,54 @@ let yieldGaugeChart = null;
 let powerTimeSeriesChart = null;
 let yearlyYieldChart = null;
 
+const yearlyBarValueLabelsPlugin = {
+    id: 'yearlyBarValueLabels',
+    afterDatasetsDraw(chart, args, pluginOptions) {
+        if (chart.config.type !== 'bar') return;
+        if (!pluginOptions || pluginOptions.enabled === false) return;
+
+        const bars = chart.getDatasetMeta(0)?.data || [];
+        const values = chart.data.datasets?.[0]?.data || [];
+        if (!bars.length || !values.length) return;
+
+        const context = chart.ctx;
+        const insideColor = pluginOptions.insideColor || '#0c1120';
+        const outsideColor = pluginOptions.outsideColor || '#f8fbff';
+        const minInsideHeight = pluginOptions.minInsideHeight || 44;
+        const insideBottomPadding = pluginOptions.insideBottomPadding || 10;
+        const fontSize = window.innerWidth <= 768 ? 13 : 18;
+
+        context.save();
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+        context.font = `700 ${fontSize}px D-DIN, Inter, sans-serif`;
+
+        bars.forEach((bar, index) => {
+            const rawValue = Number(values[index] || 0);
+            const label = `${rawValue.toLocaleString('de-DE')} kWh`;
+
+            const barTop = Math.min(bar.y, bar.base);
+            const barBottom = Math.max(bar.y, bar.base);
+            const barHeight = barBottom - barTop;
+            const isInside = barHeight >= minInsideHeight;
+
+            const x = bar.x;
+            const y = isInside ? (barBottom - insideBottomPadding) : (barTop - insideBottomPadding);
+
+            context.fillStyle = isInside ? insideColor : outsideColor;
+            context.translate(x, y);
+            context.rotate(-Math.PI / 2);
+            context.fillText(label, 0, 0);
+            context.rotate(Math.PI / 2);
+            context.translate(-x, -y);
+        });
+
+        context.restore();
+    }
+};
+
+Chart.register(yearlyBarValueLabelsPlugin);
+
 // Initialize gauges
 function initializeGauges() {
     const gaugeOptions = {
@@ -271,6 +319,13 @@ function initializeYearlyYieldChart() {
                     callbacks: {
                         label: (ctx) => `${ctx.parsed.y.toLocaleString()} kWh`
                     }
+                },
+                yearlyBarValueLabels: {
+                    enabled: true,
+                    insideColor: '#0c1120',
+                    outsideColor: '#f8fbff',
+                    minInsideHeight: 44,
+                    insideBottomPadding: 10
                 }
             },
             scales: {
@@ -410,9 +465,20 @@ function updateTimeSeries(data) {
     // Sort by timestamp ascending
     const sortedData = [...data].sort((a, b) => a.TimeStamp - b.TimeStamp);
 
+    // Calculate today's yield (difference between first and last TotalYield)
+    if (sortedData.length > 0) {
+        const firstYield = Math.round(sortedData[0].TotalYield || 0);
+        const lastYield = Math.round(sortedData[sortedData.length - 1].TotalYield || 0);
+        const todayYield = lastYield - firstYield;
+        document.getElementById('todayYieldValue').textContent = (todayYield / 1000).toLocaleString('de-DE', {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        }) + ' kWh';
+    }
+
     const labels = sortedData.map(item => {
         const date = new Date(item.TimeStamp * 1000);
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
     });
 
     const powers = sortedData.map(item => Math.round(item.Power || 0));

@@ -273,7 +273,7 @@ function updateTimeSeries(data) {
 
     const labels = sortedData.map(item => {
         const date = new Date(item.TimeStamp * 1000);
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
     });
 
     const powers = sortedData.map(item => Math.round(item.Power || 0));
