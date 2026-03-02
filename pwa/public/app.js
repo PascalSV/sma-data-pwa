@@ -164,7 +164,8 @@ function initializeTimeSeries() {
                 backgroundColor: 'rgba(102, 126, 234, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointRadius: 4,
+                pointRadius: 0,
+                pointHoverRadius: 0,
                 pointBackgroundColor: '#667eea',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2

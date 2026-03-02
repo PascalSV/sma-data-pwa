@@ -90,6 +90,15 @@ function setupInstallBanner() {
     });
 }
 
+function setupTimestampRefresh() {
+    const timestamp = document.getElementById('timestamp');
+    if (!timestamp) return;
+
+    timestamp.addEventListener('click', async () => {
+        await fetchData();
+    });
+}
+
 function setupPullToRefresh() {
     const indicator = document.getElementById('pullIndicator');
     if (!indicator) return;
@@ -243,7 +252,8 @@ function initializeTimeSeries() {
                 backgroundColor: 'rgba(124, 243, 198, 0.1)',
                 tension: 0.4,
                 fill: true,
-                pointRadius: isMobile ? 2 : 4,
+                pointRadius: 0,
+                pointHoverRadius: 0,
                 pointBackgroundColor: '#7cf3c6',
                 pointBorderColor: '#fff',
                 pointBorderWidth: isMobile ? 1 : 2
@@ -583,6 +593,7 @@ function initializeApp() {
 
     // Setup event listeners
     setupInstallBanner();
+    setupTimestampRefresh();
     setupPullToRefresh();
 
     initializeGauges();
