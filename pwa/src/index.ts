@@ -451,7 +451,7 @@ function getMainPageHTML(): string {
         <div class="loading">
             <p>Loading dashboard from /index.html...</p>
             <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
-                For the full dashboard, ensure /pwa/public/index.html is properly served.
+                For the full dashboard, ensure /public/index.html is properly served.
             </p>
         </div>
     </div>

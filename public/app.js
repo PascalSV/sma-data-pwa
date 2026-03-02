@@ -3,7 +3,7 @@ const i18n = {
     currentLanguage: 'en',
     translations: {
         de: {
-            'app.title': 'Sonnen-Meter Monitor',
+            'app.title': 'PV-Anlage Monitor',
             'card.currentLoad': 'Aktuelle Last',
             'card.energyProduction': 'Energieerzeugung',
             'card.todayProduction': 'Heutige Energieerzeugung',
@@ -19,8 +19,8 @@ const i18n = {
             'chart.power': 'Leistung (W)',
             'chart.energy': 'Energie (kWh)',
             'chart.mean': 'Durchschnitt',
-            'gauge.min': '0W',
-            'gauge.max': '4.500W'
+            'gauge.min': '0 W',
+            'gauge.max': '4.500 W'
         },
         en: {
             'app.title': 'Solar Meter Monitor',
@@ -39,8 +39,8 @@ const i18n = {
             'chart.power': 'Power (W)',
             'chart.energy': 'Energy (kWh)',
             'chart.mean': 'Mean',
-            'gauge.min': '0W',
-            'gauge.max': '4.500W'
+            'gauge.min': '0 W',
+            'gauge.max': '4.500 W'
         }
     },
 

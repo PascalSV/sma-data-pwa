@@ -115,21 +115,21 @@ The PWA communicates with the API through these endpoints:
 ## Customization
 
 ### Gauge Limits
-Edit `pwa/public/app.js` to adjust gauge max values:
+Edit `public/app.js` to adjust gauge max values:
 ```javascript
 const maxPower = 6000;      // Max power in Watts
 const maxYield = 30000;     // Max yield in Wh
 ```
 
 ### Refresh Intervals
-Modify data fetch intervals in `pwa/public/app.js`:
+Modify data fetch intervals in `public/app.js`:
 ```javascript
 setInterval(fetchData, 30 * 1000);        // 30 seconds
 setInterval(fetchData, 5 * 60 * 1000);    // 5 minutes
 ```
 
 ### Styling
-Customize colors and layout in `pwa/public/index.html` `<style>` section.
+Customize colors and layout in `public/index.html` `<style>` section.
 
 ## License
 
