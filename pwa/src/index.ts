@@ -14,6 +14,61 @@ const app = new Hono<{ Bindings: CloudflareEnv }>();
 // Central API base URL for upstream SMA reader
 const API_BASE = 'https://sma-data-server.everyday-apps.org';
 
+// i18n translations for server-rendered pages
+const i18n = {
+    de: {
+        'app.title': 'PV-Anlage Monitor',
+        'auth.title': 'Solar Meter',
+        'auth.subtitle': 'Geben Sie Ihren Zugangstoken ein',
+        'auth.label': 'Zugangstoken',
+        'auth.placeholder': 'Geben Sie Ihren Zugangstoken ein',
+        'auth.submit': 'Anmelden',
+        'auth.error': 'Ungültiger Zugangstoken',
+        'auth.error_prefix': 'Fehler: ',
+        'page.loading': 'Wird geladen...',
+        'page.dashboard_loading': 'Dashboard wird aus /index.html geladen...',
+        'page.dashboard_note': 'Für das vollständige Dashboard müssen Sie sicherstellen, dass /public/index.html korrekt bereitgestellt wird.',
+        'api.error.unauthorized': 'Nicht autorisiert',
+        'api.error.invalid_token': 'Ungültiger oder fehlender Zugangstoken',
+        'api.error.current_data': 'Fehler beim Abrufen der aktuellen Daten',
+        'api.error.current_max': 'Fehler beim Abrufen der aktuellen und maximalen Daten',
+        'api.error.today': 'Fehler beim Abrufen der heutigen Daten',
+        'api.error.yearly': 'Fehler beim Abrufen der Jahresdaten'
+    },
+    en: {
+        'app.title': 'Solar Meter Monitor',
+        'auth.title': 'Solar Meter',
+        'auth.subtitle': 'Enter your access token',
+        'auth.label': 'Access Token',
+        'auth.placeholder': 'Enter your access token',
+        'auth.submit': 'Sign In',
+        'auth.error': 'Invalid access token',
+        'auth.error_prefix': 'Error: ',
+        'page.loading': 'Loading...',
+        'page.dashboard_loading': 'Loading dashboard from /index.html...',
+        'page.dashboard_note': 'For the full dashboard, ensure /public/index.html is properly served.',
+        'api.error.unauthorized': 'Unauthorized',
+        'api.error.invalid_token': 'Invalid or missing PWA access token',
+        'api.error.current_data': 'Failed to fetch current data',
+        'api.error.current_max': 'Failed to fetch current and max data',
+        'api.error.today': 'Failed to fetch today\'s data',
+        'api.error.yearly': 'Failed to fetch yearly data'
+    }
+};
+
+// Helper function to get language from request or default to English
+function getLanguage(c: any): string {
+    const acceptLanguage = c.req.header('Accept-Language') || '';
+    if (acceptLanguage.includes('de')) return 'de';
+    return 'en';
+}
+
+// Helper function to translate strings server-side
+function t(lang: string, key: string): string {
+    const langDict = lang === 'de' ? i18n.de : i18n.en;
+    return (langDict as Record<string, string>)[key] || (i18n.en as Record<string, string>)[key] || key;
+}
+
 // Helper function to verify PWA access token
 function verifyPwaToken(c: any): boolean {
     const authHeader = c.req.header('Authorization');
@@ -38,16 +93,20 @@ app.use('/', async (c, next) => {
     }
 
     if (!verifyPwaToken(c)) {
+        const lang = getLanguage(c);
         // Return 401 for API requests, redirect to auth page for HTML requests
         const accept = c.req.header('Accept') || '';
         if (accept.includes('application/json')) {
             return c.json(
-                { error: 'Unauthorized', message: 'Invalid or missing PWA access token' },
+                { 
+                    error: t(lang, 'api.error.unauthorized'), 
+                    message: t(lang, 'api.error.invalid_token')
+                },
                 { status: 401 }
             );
         }
         // For HTML requests, serve the auth page
-        return c.html(getAuthPageHTML(), 401);
+        return c.html(getAuthPageHTML(lang), 401);
     }
 
     return next();
@@ -63,18 +122,21 @@ app.get('/auth-check', (c) => {
 
 // Auth page endpoint
 app.get('/auth.html', (c) => {
-    return c.html(getAuthPageHTML());
+    const lang = getLanguage(c);
+    return c.html(getAuthPageHTML(lang));
 });
 
 // Static assets are served by Wrangler via [assets] in wrangler.toml; no Hono serveStatic needed.
 
 // Fallback routes for index.html and other common files
 app.get('/', (c) => {
-    return c.html(getMainPageHTML());
+    const lang = getLanguage(c);
+    return c.html(getMainPageHTML(lang));
 });
 
 app.get('/index.html', (c) => {
-    return c.html(getMainPageHTML());
+    const lang = getLanguage(c);
+    return c.html(getMainPageHTML(lang));
 });
 
 // Helper to forward authorization header to API
@@ -96,7 +158,8 @@ app.get('/api/current', async (c) => {
         const data = await response.json();
         return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch current data' }, 500 as any);
+        const lang = getLanguage(c);
+        return c.json({ error: t(lang, 'api.error.current_data') }, 500 as any);
     }
 });
 
@@ -108,7 +171,8 @@ app.get('/api/current-and-max', async (c) => {
         const data = await response.json();
         return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch current and max data' }, 500 as any);
+        const lang = getLanguage(c);
+        return c.json({ error: t(lang, 'api.error.current_max') }, 500 as any);
     }
 });
 
@@ -120,7 +184,8 @@ app.get('/api/today', async (c) => {
         const data = await response.json();
         return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch today\'s data' }, 500 as any);
+        const lang = getLanguage(c);
+        return c.json({ error: t(lang, 'api.error.today') }, 500 as any);
     }
 });
 
@@ -132,18 +197,20 @@ app.get('/api/yearly-yield', async (c) => {
         const data = await response.json();
         return c.json(data, response.status as any);
     } catch (error) {
-        return c.json({ error: 'Failed to fetch yearly\'s data' }, 500 as any);
+        const lang = getLanguage(c);
+        return c.json({ error: t(lang, 'api.error.yearly') }, 500 as any);
     }
 });
 
 // Authentication page HTML
-function getAuthPageHTML(): string {
+function getAuthPageHTML(lang: string = 'en'): string {
     const html = `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar Meter - Authentication</title>
+    <meta name="color-scheme" content="light dark">
+    <title>${t(lang, 'app.title')}</title>
     <style>
         @font-face {
             font-family: 'D-DIN';
@@ -191,6 +258,21 @@ function getAuthPageHTML(): string {
             justify-content: center;
             padding: 20px;
             color: var(--text);
+        }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #fafafa;
+                --card: rgba(0, 0, 0, 0.04);
+                --stroke: rgba(0, 0, 0, 0.08);
+                --text: #1a1a1a;
+                --muted: #666666;
+                --shadow: 0 24px 64px rgba(0,0,0,0.1);
+            }
+
+            body {
+                background: radial-gradient(120% 120% at 20% 20%, #e8f4f0 0%, #f5fafc 45%, #ffffff 100%);
+            }
         }
 
         .auth-container {
@@ -244,6 +326,16 @@ function getAuthPageHTML(): string {
         button:hover { transform: translateY(-1px); box-shadow: 0 16px 32px rgba(124, 243, 198, 0.4); }
         button:active { transform: translateY(0); }
 
+        @media (prefers-color-scheme: light) {
+            button {
+                color: #ffffff;
+                box-shadow: 0 12px 24px rgba(124, 243, 198, 0.15);
+            }
+            button:hover {
+                box-shadow: 0 16px 32px rgba(124, 243, 198, 0.25);
+            }
+        }
+
         .error {
             color: var(--danger);
             font-size: 0.9em;
@@ -271,25 +363,25 @@ function getAuthPageHTML(): string {
 <body>
     <div class="auth-container">
         <div class="auth-header">
-            <img src="/icon-transparent.svg" alt="Solar Meter" class="auth-icon">
-            <h1>Solar Meter</h1>
-            <p class="auth-subtitle">Enter your access token</p>
+            <img src="/icon-transparent.svg" alt="${t(lang, 'auth.title')}" class="auth-icon">
+            <h1>${t(lang, 'auth.title')}</h1>
+            <p class="auth-subtitle">${t(lang, 'auth.subtitle')}</p>
         </div>
 
         <form id="authForm">
             <div class="form-group">
-                <label for="token">Access Token</label>
+                <label for="token">${t(lang, 'auth.label')}</label>
                 <input 
                     type="password" 
                     id="token" 
-                    placeholder="Enter your access token"
+                    placeholder="${t(lang, 'auth.placeholder')}"
                     required
                     autocomplete="off"
                 />
             </div>
             <button type="submit">
                 <span class="loading" id="loading"></span>
-                Sign In
+                ${t(lang, 'auth.submit')}
             </button>
             <div class="error" id="error"></div>
         </form>
@@ -300,6 +392,8 @@ function getAuthPageHTML(): string {
         const tokenInput = document.getElementById('token');
         const errorDiv = document.getElementById('error');
         const loadingSpan = document.getElementById('loading');
+        const errorPrefix = '${t(lang, 'auth.error_prefix')}';
+        const invalidTokenError = '${t(lang, 'auth.error')}';
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -322,11 +416,11 @@ function getAuthPageHTML(): string {
                     // Reload to access the PWA
                     window.location.href = '/';
                 } else {
-                    errorDiv.textContent = 'Invalid access token';
+                    errorDiv.textContent = invalidTokenError;
                     errorDiv.classList.add('show');
                 }
             } catch (error) {
-                errorDiv.textContent = 'Error: ' + error.message;
+                errorDiv.textContent = errorPrefix + error.message;
                 errorDiv.classList.add('show');
             } finally {
                 loadingSpan.classList.remove('show');
@@ -352,18 +446,19 @@ function getAuthPageHTML(): string {
 }
 
 // Main dashboard page HTML (embedded version for development)
-function getMainPageHTML(): string {
+function getMainPageHTML(lang: string = 'en'): string {
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="theme-color" content="#0f162b">
+    <meta name="color-scheme" content="light dark">
     <meta name="description" content="Solar meter PWA - Real-time solar power monitoring">
-    <title>Solar Meter Monitor</title>
+    <title>${t(lang, 'app.title')}</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="apple-touch-icon" href="/icon-192.svg">
     <style>
         @font-face {
             font-family: 'D-DIN';
@@ -398,6 +493,18 @@ function getMainPageHTML(): string {
             --primary-strong: #57e3b2;
             --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
         }
+
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #fafafa;
+                --card: rgba(0, 0, 0, 0.04);
+                --stroke: rgba(0, 0, 0, 0.08);
+                --text: #1a1a1a;
+                --muted: #666666;
+                --shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            }
+        }
+
         body {
             font-family: 'D-DIN', 'Inter', 'SF Pro Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: radial-gradient(120% 120% at 20% 20%, #192444 0%, #0c1120 45%, #080c18 100%);
@@ -406,6 +513,13 @@ function getMainPageHTML(): string {
             color: var(--text);
             line-height: 1.6;
         }
+
+        @media (prefers-color-scheme: light) {
+            body {
+                background: radial-gradient(120% 120% at 20% 20%, #e8f4f0 0%, #f5fafc 45%, #ffffff 100%);
+            }
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -427,6 +541,13 @@ function getMainPageHTML(): string {
             color: var(--text);
             letter-spacing: -0.02em;
             margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1 img {
+            width: 48px;
+            height: 48px;
         }
         .timestamp { color: var(--muted); font-size: 0.95em; }
         .loading {
@@ -438,20 +559,25 @@ function getMainPageHTML(): string {
             border-radius: 14px;
             box-shadow: var(--shadow);
         }
+        .loading p:last-child {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #999;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <div>
-                <h1><img src="/icon-transparent.svg" alt="Solar Meter" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 12px;">Solar Meter Monitor</h1>
-                <p class="timestamp">Loading...</p>
+                <h1><img src="/icon-transparent.svg" alt="Solar Meter">${t(lang, 'app.title')}</h1>
+                <p class="timestamp">${t(lang, 'page.loading')}</p>
             </div>
         </header>
         <div class="loading">
-            <p>Loading dashboard from /index.html...</p>
-            <p style="margin-top: 20px; font-size: 0.9em; color: #999;">
-                For the full dashboard, ensure /public/index.html is properly served.
+            <p>${t(lang, 'page.dashboard_loading')}</p>
+            <p>
+                ${t(lang, 'page.dashboard_note')}
             </p>
         </div>
     </div>
